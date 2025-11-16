@@ -11,7 +11,8 @@ import * as gridNav from './logic/gridNavigation.js'
 import { useState, useRef, useEffect, useMemo } from 'react'
 import './App.css'
       
-const TURN_TIME = 30
+const TURN_TIME = 20
+const GAME_TIME = 5
 
 export default function App() {
   // Grid states
@@ -39,7 +40,7 @@ export default function App() {
   const [player2Score, setPlayer2Score] = useState(0)
   
   // Time states
-  const [timeLeft, setTimeLeft] = useState(300) // 10 minutes in seconds
+  const [timeLeft, setTimeLeft] = useState(GAME_TIME) // 10 minutes in seconds
   const [turnTimeLeft, setTurnTimeLeft] = useState(TURN_TIME) // 10 seconds per turn
   const [turnTimerActive, setTurnTimerActive] = useState(false)
   const [gameStarted, setGameStarted] = useState(false)
@@ -184,7 +185,7 @@ export default function App() {
     setPlayer2Score(0)
     
     // Reset time states
-    setTimeLeft(11)
+    setTimeLeft(GAME_TIME)
     setTurnTimeLeft(TURN_TIME)
     setTurnTimerActive(false)
     setGameStarted(false)
@@ -360,6 +361,39 @@ export default function App() {
     // Update current down clue number
     const startCell = gridNav.getCellByIndex(cells, top, col, cols)
     setCurrentDownClue(startCell?.number || null)
+  }
+
+  function handleClueClick(clueNumber, direction) {
+    if (!crossword || !cells) return
+    
+    // Find the starting cell for this clue number
+    let startCell = null
+    for (const cell of cells) {
+      if (cell.number === clueNumber && !cell.isBlack) {
+        startCell = cell
+        break
+      }
+    }
+    
+    if (!startCell) return
+    
+    const { row, col } = startCell
+    
+    // Set the direction and update highlights
+    setDirection(direction)
+    setSelected({ row, col })
+    
+    if (direction === 'across') {
+      updateRowHighlight(row, col)
+    } else {
+      updateColHighlight(row, col)
+    }
+    
+    // Focus the first cell after a brief delay to ensure DOM is updated
+    setTimeout(() => {
+      const el = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`)
+      if (el) el.focus()
+    }, 0)
   }
 
   function onFail(row, col, across) {
@@ -634,23 +668,25 @@ export default function App() {
 
   return (
     <main className="app">
-      {/* Player Headers */}
-      <div className="player-headers">
-        <h2 
-          className={`player-header ${activePlayer ? 'active' : ''}`}
-        >
-          Player 1
-        </h2>
-        <h2 
-          className={`player-header ${!activePlayer ? 'active' : ''}`}
-        >
-          Player 2
-        </h2>
-      </div>
-      
-      <ScoreWidget activePlayer={activePlayer} player1Score={player1Score} player2Score={player2Score} turnTimeLeft={turnTimeLeft} turnTimerActive={turnTimerActive} timeLeft={timeLeft}/>
-      
-      <div className="controls">
+      {!showStartModal && (
+        <>
+          {/* Player Headers */}
+          <div className="player-headers">
+            <h2 
+              className={`player-header ${activePlayer ? 'active' : ''}`}
+            >
+              Player 1
+            </h2>
+            <h2 
+              className={`player-header ${!activePlayer ? 'active' : ''}`}
+            >
+              Player 2
+            </h2>
+          </div>
+          
+          <ScoreWidget activePlayer={activePlayer} player1Score={player1Score} player2Score={player2Score} turnTimeLeft={turnTimeLeft} turnTimerActive={turnTimerActive} timeLeft={timeLeft}/>
+          
+          <div className="controls">
         {viewingSolution && (
           <button
             className="back-btn"
@@ -659,23 +695,25 @@ export default function App() {
             ← Back to Results
           </button>
         )}
-      </div>
-      <div className="board">
-        <div className={`grid ${feedbackType ? `feedback-${feedbackType}` : ''}`} role="grid" aria-label="Crossword grid" ref={gridRef} aria-hidden={showSwapModal || showStartModal} style={{
-          gridTemplateColumns: `repeat(${cols}, 1fr)`,
-          gridTemplateRows: `repeat(${rows}, 1fr)`
-        }}>
-          <Grid cells={cells} selected={selected} highlight={highlight} clickHandler={handleCellClick} doubleClickHandler={handleCellDoubleClick} keyDownHandler={handleCellKeyDown}/>
-        </div>
+          </div>
+          <div className="board">
+            <div className={`grid ${feedbackType ? `feedback-${feedbackType}` : ''}`} role="grid" aria-label="Crossword grid" ref={gridRef} aria-hidden={showSwapModal || showStartModal} style={{
+              gridTemplateColumns: `repeat(${cols}, 1fr)`,
+              gridTemplateRows: `repeat(${rows}, 1fr)`
+            }}>
+              <Grid cells={cells} selected={selected} highlight={highlight} clickHandler={handleCellClick} doubleClickHandler={handleCellDoubleClick} keyDownHandler={handleCellKeyDown}/>
+            </div>
 
-        <aside className="clues" aria-label="Across Clues">
-          <AcrossClues crossword={crossword} cells={cells} activeClue={currentAcrossClue} isActive={direction === 'across'} />
-        </aside>
+            <aside className="clues" aria-label="Across Clues">
+              <AcrossClues crossword={crossword} cells={cells} activeClue={currentAcrossClue} isActive={direction === 'across'} onClueClick={handleClueClick} />
+            </aside>
 
-        <aside className="clues" aria-label="Down Clues">
-          <DownClues crossword={crossword} cells={cells} activeClue={currentDownClue} isActive={direction === 'down'} />
-        </aside>
-      </div>
+            <aside className="clues" aria-label="Down Clues">
+              <DownClues crossword={crossword} cells={cells} activeClue={currentDownClue} isActive={direction === 'down'} onClueClick={handleClueClick} />
+            </aside>
+          </div>
+        </>
+      )}
       
       {winModalPlayer && <VictoryModal 
         victoryMessage={winModalPlayer === 'Tie' ? '🤝 It\'s a Tie! 🤝' : `🎉 ${winModalPlayer} Wins! 🎉`}

@@ -2,7 +2,21 @@ export default function StartModal({ startMessage, fileInputRef, fileSelectHandl
     return (
         <div className="modal-overlay" role="dialog" aria-modal="true">
           <div className="modal-box">
+            <h2 className="modal-title">Competitive Crossword</h2>
+            
+            <div className="rules-section">
+              <h3>How to Play:</h3>
+              <ul className="rules-list">
+                <li><strong>Player vs. Player:</strong> Take turns solving clues and filling in words.</li>
+                <li><strong>Scoring:</strong> For each successful word, earn points based on the word's length.</li>
+                <li><strong>Timer:</strong> Each player has 30 seconds per turn. The entire game is 5 minutes.</li>
+                <li><strong>Navigation:</strong> Click on clues to highlight words, or use arrow keys to move around.</li>
+                <li><strong>Victory:</strong> The player with the most points when the puzzle is complete wins!</li>
+              </ul>
+            </div>
+            
             <p className="modal-message">{startMessage}</p>
+            
             <input
               type="file"
               ref={fileInputRef}
@@ -16,9 +30,9 @@ export default function StartModal({ startMessage, fileInputRef, fileSelectHandl
                 onClick={() => fileLoaded && startHandler()}
                 disabled={!fileLoaded}
               >
-                Start
+                Start Game
               </button>
-              <button className="modal-btn" onClick={() => loadFileHandler()}>Load file</button>
+              <button className="modal-btn" onClick={() => loadFileHandler()}>Load .puz File</button>
             </div>
           </div>
         </div>
