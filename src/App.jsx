@@ -123,7 +123,7 @@ export default function App() {
     const formData = new FormData()
     formData.append('file', file)
     
-    fetch('http://127.0.0.1:5173/api/jsonify', {
+    fetch('http://127.0.0.1:5174/api/jsonify', {
       method: 'POST',
       body: formData
     })
@@ -953,6 +953,20 @@ export default function App() {
 
     if (/^[a-zA-Z]$/.test(ev.key)) {
       if (!gridNav.getCellByIndex(cells, row, col, cols).mutable) {
+        // If cell is immutable, move cursor forward instead
+        const next = direction === "down" ? gridNav.findNextInCol(cells, row, col, rows, cols) : gridNav.findNextInRow(cells, row, col, cols)
+        const nextAvailable = direction === "down" ? !gridNav.getCellByIndex(cells, row + 1, col, cols)?.isBlack : !gridNav.getCellByIndex(cells, row, col + 1, cols)?.isBlack
+
+        if (next && nextAvailable) {
+          setSelected({ row: next.row, col: next.col })
+          if (direction === "down") updateColHighlight(next.row, next.col)
+          else updateRowHighlight(next.row, next.col)
+          setTimeout(() => {
+            const el = document.querySelector(`.cell[data-row="${next.row}"][data-col="${next.col}"]`)
+            if (el) el.focus()
+          }, 0)
+        }
+        ev.preventDefault()
         return
       }
 
